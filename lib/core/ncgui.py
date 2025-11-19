@@ -5,7 +5,7 @@ Copyright (c) 2006-2025 sqlmap developers (https://sqlmap.org)
 See the file 'LICENSE' for copying permission
 """
 
-import curses
+# import curses
 import os
 import subprocess
 import sys
@@ -19,8 +19,8 @@ from lib.core.enums import MKSTEMP_PREFIX
 from lib.core.exception import SqlmapMissingDependence
 from lib.core.exception import SqlmapSystemException
 from lib.core.settings import IS_WIN
-from thirdparty.six.moves import queue as _queue
 from thirdparty.six.moves import configparser as _configparser
+
 
 class NcursesUI:
     def __init__(self, stdscr, parser):
@@ -37,13 +37,13 @@ class NcursesUI:
 
         # Initialize colors
         curses.start_color()
-        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)    # Header
-        curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)    # Active tab
-        curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)   # Inactive tab
+        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)  # Header
+        curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)  # Active tab
+        curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Inactive tab
         curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Selected field
-        curses.init_pair(5, curses.COLOR_GREEN, curses.COLOR_BLACK)   # Help text
-        curses.init_pair(6, curses.COLOR_RED, curses.COLOR_BLACK)     # Error/Important
-        curses.init_pair(7, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Label
+        curses.init_pair(5, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Help text
+        curses.init_pair(6, curses.COLOR_RED, curses.COLOR_BLACK)  # Error/Important
+        curses.init_pair(7, curses.COLOR_CYAN, curses.COLOR_BLACK)  # Label
 
         # Setup curses
         curses.curs_set(1)
@@ -56,21 +56,27 @@ class NcursesUI:
         """Parse command line options into tabs and fields"""
         for group in self.parser.option_groups:
             tab_data = {
-                'title': group.title,
-                'description': group.get_description() if hasattr(group, 'get_description') and group.get_description() else "",
-                'options': []
+                "title": group.title,
+                "description": group.get_description()
+                if hasattr(group, "get_description") and group.get_description()
+                else "",
+                "options": [],
             }
 
             for option in group.option_list:
                 field_data = {
-                    'dest': option.dest,
-                    'label': self._format_option_strings(option),
-                    'help': option.help if option.help else "",
-                    'type': option.type if hasattr(option, 'type') and option.type else 'bool',
-                    'value': '',
-                    'default': defaults.get(option.dest) if defaults.get(option.dest) else None
+                    "dest": option.dest,
+                    "label": self._format_option_strings(option),
+                    "help": option.help if option.help else "",
+                    "type": option.type
+                    if hasattr(option, "type") and option.type
+                    else "bool",
+                    "value": "",
+                    "default": defaults.get(option.dest)
+                    if defaults.get(option.dest)
+                    else None,
                 }
-                tab_data['options'].append(field_data)
+                tab_data["options"].append(field_data)
                 self.fields[(group.title, option.dest)] = field_data
 
             self.tabs.append(tab_data)
@@ -78,11 +84,11 @@ class NcursesUI:
     def _format_option_strings(self, option):
         """Format option strings for display"""
         parts = []
-        if hasattr(option, '_short_opts') and option._short_opts:
+        if hasattr(option, "_short_opts") and option._short_opts:
             parts.extend(option._short_opts)
-        if hasattr(option, '_long_opts') and option._long_opts:
+        if hasattr(option, "_long_opts") and option._long_opts:
             parts.extend(option._long_opts)
-        return ', '.join(parts)
+        return ", ".join(parts)
 
     def _draw_header(self):
         """Draw the header bar"""
@@ -99,7 +105,7 @@ class NcursesUI:
         x = 0
 
         for i, tab in enumerate(self.tabs):
-            tab_text = " %s " % tab['title']
+            tab_text = " %s " % tab["title"]
 
             # Check if tab exceeds width, wrap to next line
             if x + len(tab_text) >= width:
@@ -120,7 +126,7 @@ class NcursesUI:
         x = 0
 
         for i, tab in enumerate(self.tabs):
-            tab_text = " %s " % tab['title']
+            tab_text = " %s " % tab["title"]
 
             # Check if tab exceeds width, wrap to next line
             if x + len(tab_text) >= width:
@@ -178,8 +184,8 @@ class NcursesUI:
         y = start_y
 
         # Draw description if exists
-        if tab['description']:
-            desc_lines = self._wrap_text(tab['description'], width - 4)
+        if tab["description"]:
+            desc_lines = self._wrap_text(tab["description"], width - 4)
             for line in desc_lines[:2]:  # Limit to 2 lines
                 try:
                     self.stdscr.attron(curses.color_pair(5))
@@ -194,14 +200,16 @@ class NcursesUI:
         visible_start = self.scroll_offset
         visible_end = visible_start + (height - y - 2)
 
-        for i, option in enumerate(tab['options'][visible_start:visible_end], visible_start):
+        for i, option in enumerate(
+            tab["options"][visible_start:visible_end], visible_start
+        ):
             if y >= height - 2:
                 break
 
-            is_selected = (i == self.current_field)
+            is_selected = i == self.current_field
 
             # Draw label
-            label = option['label'][:25].ljust(25)
+            label = option["label"][:25].ljust(25)
             try:
                 if is_selected:
                     self.stdscr.attron(curses.color_pair(4) | curses.A_BOLD)
@@ -219,12 +227,12 @@ class NcursesUI:
 
             # Draw value
             value_str = ""
-            if option['type'] == 'bool':
-                value_str = "[X]" if option['value'] else "[ ]"
+            if option["type"] == "bool":
+                value_str = "[X]" if option["value"] else "[ ]"
             else:
-                value_str = str(option['value']) if option['value'] else ""
-                if option['default'] and not option['value']:
-                    value_str = "(%s)" % str(option['default'])
+                value_str = str(option["value"]) if option["value"] else ""
+                if option["default"] and not option["value"]:
+                    value_str = "(%s)" % str(option["default"])
 
             value_str = value_str[:30]
 
@@ -239,7 +247,7 @@ class NcursesUI:
 
             # Draw help text
             if width > 65:
-                help_text = option['help'][:width-62] if option['help'] else ""
+                help_text = option["help"][: width - 62] if option["help"] else ""
                 try:
                     self.stdscr.attron(curses.color_pair(5))
                     self.stdscr.addstr(y, 60, help_text)
@@ -250,7 +258,7 @@ class NcursesUI:
             y += 1
 
         # Draw scroll indicator
-        if len(tab['options']) > visible_end - visible_start:
+        if len(tab["options"]) > visible_end - visible_start:
             try:
                 self.stdscr.attron(curses.color_pair(6))
                 self.stdscr.addstr(height - 2, width - 10, "[More...]")
@@ -280,14 +288,14 @@ class NcursesUI:
     def _edit_field(self):
         """Edit the current field"""
         tab = self.tabs[self.current_tab]
-        if self.current_field >= len(tab['options']):
+        if self.current_field >= len(tab["options"]):
             return
 
-        option = tab['options'][self.current_field]
+        option = tab["options"][self.current_field]
 
-        if option['type'] == 'bool':
+        if option["type"] == "bool":
             # Toggle boolean
-            option['value'] = not option['value']
+            option["value"] = not option["value"]
         else:
             # Text input
             height, width = self.stdscr.getmaxyx()
@@ -296,7 +304,7 @@ class NcursesUI:
             input_win = curses.newwin(5, width - 20, height // 2 - 2, 10)
             input_win.box()
             input_win.attron(curses.color_pair(2))
-            input_win.addstr(0, 2, " Edit %s " % option['label'][:20])
+            input_win.addstr(0, 2, " Edit %s " % option["label"][:20])
             input_win.attroff(curses.color_pair(2))
             input_win.addstr(2, 2, "Value:")
             input_win.refresh()
@@ -306,26 +314,26 @@ class NcursesUI:
             curses.curs_set(1)
 
             # Pre-fill with existing value
-            current_value = str(option['value']) if option['value'] else ""
+            current_value = str(option["value"]) if option["value"] else ""
             input_win.addstr(2, 9, current_value)
             input_win.move(2, 9)
 
             try:
-                new_value = input_win.getstr(2, 9, width - 32).decode('utf-8')
+                new_value = input_win.getstr(2, 9, width - 32).decode("utf-8")
 
                 # Validate and convert based on type
-                if option['type'] == 'int':
+                if option["type"] == "int":
                     try:
-                        option['value'] = int(new_value) if new_value else None
+                        option["value"] = int(new_value) if new_value else None
                     except ValueError:
-                        option['value'] = None
-                elif option['type'] == 'float':
+                        option["value"] = None
+                elif option["type"] == "float":
                     try:
-                        option['value'] = float(new_value) if new_value else None
+                        option["value"] = float(new_value) if new_value else None
                     except ValueError:
-                        option['value'] = None
+                        option["value"] = None
                 else:
-                    option['value'] = new_value if new_value else None
+                    option["value"] = new_value if new_value else None
             except:
                 pass
 
@@ -355,21 +363,25 @@ class NcursesUI:
         curses.curs_set(1)
 
         try:
-            filename = input_win.getstr(2, 8, width - 32).decode('utf-8').strip()
+            filename = input_win.getstr(2, 8, width - 32).decode("utf-8").strip()
 
             if filename:
                 # Collect all field values
                 config = {}
                 for tab in self.tabs:
-                    for option in tab['options']:
-                        dest = option['dest']
-                        value = option['value'] if option['value'] else option.get('default')
+                    for option in tab["options"]:
+                        dest = option["dest"]
+                        value = (
+                            option["value"]
+                            if option["value"]
+                            else option.get("default")
+                        )
 
-                        if option['type'] == 'bool':
+                        if option["type"] == "bool":
                             config[dest] = bool(value)
-                        elif option['type'] == 'int':
+                        elif option["type"] == "int":
                             config[dest] = int(value) if value else None
-                        elif option['type'] == 'float':
+                        elif option["type"] == "float":
                             config[dest] = float(value) if value else None
                         else:
                             config[dest] = value
@@ -390,7 +402,7 @@ class NcursesUI:
                     input_win.addstr(0, 2, " Export Successful ")
                     input_win.attroff(curses.color_pair(5))
                     input_win.addstr(2, 2, "Configuration exported to:")
-                    input_win.addstr(3, 2, filename[:width - 26])
+                    input_win.addstr(3, 2, filename[: width - 26])
                     input_win.refresh()
                     curses.napms(2000)
                 except Exception as ex:
@@ -400,7 +412,7 @@ class NcursesUI:
                     input_win.attron(curses.color_pair(6))
                     input_win.addstr(0, 2, " Export Failed ")
                     input_win.attroff(curses.color_pair(6))
-                    input_win.addstr(2, 2, str(getSafeExString(ex))[:width - 26])
+                    input_win.addstr(2, 2, str(getSafeExString(ex))[: width - 26])
                     input_win.refresh()
                     curses.napms(2000)
         except:
@@ -432,7 +444,7 @@ class NcursesUI:
         curses.curs_set(1)
 
         try:
-            filename = input_win.getstr(2, 8, width - 32).decode('utf-8').strip()
+            filename = input_win.getstr(2, 8, width - 32).decode("utf-8").strip()
 
             if filename and os.path.isfile(filename):
                 try:
@@ -444,8 +456,8 @@ class NcursesUI:
 
                     # Load values into fields
                     for tab in self.tabs:
-                        for option in tab['options']:
-                            dest = option['dest']
+                        for option in tab["options"]:
+                            dest = option["dest"]
 
                             # Search for option in all sections
                             for section in config.sections():
@@ -453,20 +465,29 @@ class NcursesUI:
                                     value = config.get(section, dest)
 
                                     # Convert based on type
-                                    if option['type'] == 'bool':
-                                        option['value'] = value.lower() in ('true', '1', 'yes', 'on')
-                                    elif option['type'] == 'int':
+                                    if option["type"] == "bool":
+                                        option["value"] = value.lower() in (
+                                            "true",
+                                            "1",
+                                            "yes",
+                                            "on",
+                                        )
+                                    elif option["type"] == "int":
                                         try:
-                                            option['value'] = int(value) if value else None
+                                            option["value"] = (
+                                                int(value) if value else None
+                                            )
                                         except ValueError:
-                                            option['value'] = None
-                                    elif option['type'] == 'float':
+                                            option["value"] = None
+                                    elif option["type"] == "float":
                                         try:
-                                            option['value'] = float(value) if value else None
+                                            option["value"] = (
+                                                float(value) if value else None
+                                            )
                                         except ValueError:
-                                            option['value'] = None
+                                            option["value"] = None
                                     else:
-                                        option['value'] = value if value else None
+                                        option["value"] = value if value else None
 
                                     imported_count += 1
                                     break
@@ -478,7 +499,7 @@ class NcursesUI:
                     input_win.addstr(0, 2, " Import Successful ")
                     input_win.attroff(curses.color_pair(5))
                     input_win.addstr(2, 2, "Imported %d options from:" % imported_count)
-                    input_win.addstr(3, 2, filename[:width - 26])
+                    input_win.addstr(3, 2, filename[: width - 26])
                     input_win.refresh()
                     curses.napms(2000)
 
@@ -489,7 +510,7 @@ class NcursesUI:
                     input_win.attron(curses.color_pair(6))
                     input_win.addstr(0, 2, " Import Failed ")
                     input_win.attroff(curses.color_pair(6))
-                    input_win.addstr(2, 2, str(getSafeExString(ex))[:width - 26])
+                    input_win.addstr(2, 2, str(getSafeExString(ex))[: width - 26])
                     input_win.refresh()
                     curses.napms(2000)
             elif filename:
@@ -500,7 +521,7 @@ class NcursesUI:
                 input_win.addstr(0, 2, " File Not Found ")
                 input_win.attroff(curses.color_pair(6))
                 input_win.addstr(2, 2, "File does not exist:")
-                input_win.addstr(3, 2, filename[:width - 26])
+                input_win.addstr(3, 2, filename[: width - 26])
                 input_win.refresh()
                 curses.napms(2000)
         except:
@@ -520,15 +541,15 @@ class NcursesUI:
 
         # Collect all field values
         for tab in self.tabs:
-            for option in tab['options']:
-                dest = option['dest']
-                value = option['value'] if option['value'] else option.get('default')
+            for option in tab["options"]:
+                dest = option["dest"]
+                value = option["value"] if option["value"] else option.get("default")
 
-                if option['type'] == 'bool':
+                if option["type"] == "bool":
                     config[dest] = bool(value)
-                elif option['type'] == 'int':
+                elif option["type"] == "int":
                     config[dest] = int(value) if value else None
-                elif option['type'] == 'float':
+                elif option["type"] == "float":
                     config[dest] = float(value) if value else None
                 else:
                     config[dest] = value
@@ -567,17 +588,23 @@ class NcursesUI:
         # Start sqlmap process
         try:
             process = subprocess.Popen(
-                [sys.executable or "python", os.path.join(paths.SQLMAP_ROOT_PATH, "sqlmap.py"), "-c", configFile],
+                [
+                    sys.executable or "python",
+                    os.path.join(paths.SQLMAP_ROOT_PATH, "sqlmap.py"),
+                    "-c",
+                    configFile,
+                ],
                 shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
                 bufsize=1,
-                close_fds=not IS_WIN
+                close_fds=not IS_WIN,
             )
 
             # Make it non-blocking
             import fcntl
+
             flags = fcntl.fcntl(process.stdout, fcntl.F_GETFL)
             fcntl.fcntl(process.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
@@ -591,7 +618,7 @@ class NcursesUI:
                 # Check for user input
                 try:
                     key = console_win.getch()
-                    if key in (ord('q'), ord('Q')):
+                    if key in (ord("q"), ord("Q")):
                         # Kill process
                         process.terminate()
                         break
@@ -599,7 +626,7 @@ class NcursesUI:
                         # Send newline to process
                         if process.poll() is None:
                             try:
-                                process.stdin.write(b'\n')
+                                process.stdin.write(b"\n")
                                 process.stdin.flush()
                             except:
                                 pass
@@ -610,11 +637,11 @@ class NcursesUI:
                 try:
                     chunk = process.stdout.read(1024)
                     if chunk:
-                        current_line += chunk.decode('utf-8', errors='ignore')
+                        current_line += chunk.decode("utf-8", errors="ignore")
 
                         # Split into lines
-                        while '\n' in current_line:
-                            line, current_line = current_line.split('\n', 1)
+                        while "\n" in current_line:
+                            line, current_line = current_line.split("\n", 1)
                             lines.append(line)
 
                             # Keep only last N lines
@@ -626,7 +653,7 @@ class NcursesUI:
                             start_line = max(0, len(lines) - (height - 10))
                             for i, l in enumerate(lines[start_line:]):
                                 try:
-                                    output_win.addstr(i, 0, l[:width-10])
+                                    output_win.addstr(i, 0, l[: width - 10])
                                 except:
                                     pass
                             output_win.refresh()
@@ -640,8 +667,8 @@ class NcursesUI:
                     try:
                         remaining = process.stdout.read()
                         if remaining:
-                            current_line += remaining.decode('utf-8', errors='ignore')
-                            for line in current_line.split('\n'):
+                            current_line += remaining.decode("utf-8", errors="ignore")
+                            for line in current_line.split("\n"):
                                 if line:
                                     lines.append(line)
                     except:
@@ -652,11 +679,13 @@ class NcursesUI:
                     start_line = max(0, len(lines) - (height - 10))
                     for i, l in enumerate(lines[start_line:]):
                         try:
-                            output_win.addstr(i, 0, l[:width-10])
+                            output_win.addstr(i, 0, l[: width - 10])
                         except:
                             pass
 
-                    output_win.addstr(height - 9, 0, "--- Process finished. Press Q to close ---")
+                    output_win.addstr(
+                        height - 9, 0, "--- Process finished. Press Q to close ---"
+                    )
                     output_win.refresh()
                     console_win.refresh()
 
@@ -664,7 +693,7 @@ class NcursesUI:
                     console_win.nodelay(False)
                     while True:
                         key = console_win.getch()
-                        if key in (ord('q'), ord('Q')):
+                        if key in (ord("q"), ord("Q")):
                             break
 
                     break
@@ -711,7 +740,7 @@ class NcursesUI:
             # Handle input
             if key == curses.KEY_F10 or key == 27:  # F10 or ESC
                 break
-            elif key == ord('\t') or key == curses.KEY_RIGHT:  # Tab or Right arrow
+            elif key == ord("\t") or key == curses.KEY_RIGHT:  # Tab or Right arrow
                 self.current_tab = (self.current_tab + 1) % len(self.tabs)
                 self.current_field = 0
                 self.scroll_offset = 0
@@ -726,7 +755,7 @@ class NcursesUI:
                     if self.current_field < self.scroll_offset:
                         self.scroll_offset = self.current_field
             elif key == curses.KEY_DOWN:  # Down arrow
-                if self.current_field < len(tab['options']) - 1:
+                if self.current_field < len(tab["options"]) - 1:
                     self.current_field += 1
                     # Adjust scroll if needed
                     height, width = self.stdscr.getmaxyx()
@@ -741,10 +770,11 @@ class NcursesUI:
                 self._export_config()
             elif key == curses.KEY_F4:  # F4 to import
                 self._import_config()
-            elif key == ord(' '):  # Space for boolean toggle
-                option = tab['options'][self.current_field]
-                if option['type'] == 'bool':
-                    option['value'] = not option['value']
+            elif key == ord(" "):  # Space for boolean toggle
+                option = tab["options"][self.current_field]
+                if option["type"] == "bool":
+                    option["value"] = not option["value"]
+
 
 def runNcGui(parser):
     """Main entry point for ncurses GUI"""
@@ -752,7 +782,9 @@ def runNcGui(parser):
         # Check if ncurses is available
         import curses
     except ImportError:
-        raise SqlmapMissingDependence("missing 'curses' module (try installing 'windows-curses' on Windows)")
+        raise SqlmapMissingDependence(
+            "missing 'curses' module (try installing 'windows-curses' on Windows)"
+        )
 
     try:
         # Initialize and run
