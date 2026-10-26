@@ -5,11 +5,15 @@ Copyright (c) 2006-2025 sqlmap developers (https://sqlmap.org)
 See the file 'LICENSE' for copying permission
 """
 
-import curses
 import os
 import subprocess
 import sys
 import tempfile
+
+try:
+    import curses
+except ImportError:
+    curses = None
 
 from lib.core.common import getSafeExString
 from lib.core.common import saveConfig
@@ -748,10 +752,7 @@ class NcursesUI:
 
 def runNcGui(parser):
     """Main entry point for ncurses GUI"""
-    try:
-        # Check if ncurses is available
-        import curses
-    except ImportError:
+    if curses is None:
         raise SqlmapMissingDependence("missing 'curses' module (try installing 'windows-curses' on Windows)")
 
     try:
