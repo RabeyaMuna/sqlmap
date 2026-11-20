@@ -5,11 +5,15 @@ Copyright (c) 2006-2025 sqlmap developers (https://sqlmap.org)
 See the file 'LICENSE' for copying permission
 """
 
-import curses
 import os
 import subprocess
 import sys
 import tempfile
+
+try:
+    import curses
+except ImportError:
+    curses = None
 
 from lib.core.common import getSafeExString
 from lib.core.common import saveConfig
@@ -24,6 +28,9 @@ from thirdparty.six.moves import configparser as _configparser
 
 class NcursesUI:
     def __init__(self, stdscr, parser):
+        if curses is None:
+            raise SqlmapMissingDependence("missing 'curses' module (try installing 'windows-curses' on Windows)")
+
         self.stdscr = stdscr
         self.parser = parser
         self.current_tab = 0

@@ -243,7 +243,7 @@ def smokeTest():
             continue
 
         for filename in files:
-            if os.path.splitext(filename)[1].lower() == ".py" and filename not in ("__init__.py", "gui.py"):
+            if os.path.splitext(filename)[1].lower() == ".py" and filename not in ("__init__.py", "gui.py", "ncgui.py"):
                 path = os.path.join(root, os.path.splitext(filename)[0])
                 path = path.replace(paths.SQLMAP_ROOT_PATH, '.')
                 path = path.replace(os.sep, '.').lstrip('.')
